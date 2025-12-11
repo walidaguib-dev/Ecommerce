@@ -2,20 +2,20 @@
 
 ### **Introduction**
 
-Welcome to the documentation for the **[Your Project Name]** E-commerce API. This API serves as the robust backend for a modern e-commerce platform, offering features like **product management, secure authentication (RBAC), real-time updates, payment processing (Stripe), advanced caching, and a user following system**. It's built with **[mention your core technology, e.g., Node.js/Express, Python/Django, etc.]** and designed for high performance and scalability.
+Welcome to the documentation for the **E-commerce API**. This API serves as the robust backend for a modern e-commerce platform, offering features like **product management, secure authentication (RBAC), real-time updates, payment processing (Stripe), advanced caching, and a user following system**. It's built with **ASP.NET Core** and designed for high performance and scalability.
 
 ---
 
 ### **✨ Key Features**
 
-* **Authentication & Authorization:** Secure user authentication using **JWTs** with **Role-Based Access Control (RBAC)** to manage different permission levels (e.g., `Admin`, `Seller`, `Customer`).
+* **Authentication & Authorization:** Secure user authentication using **JWTs** with **Role-Based Access Control (RBAC)** to manage different permission levels (e.g., `Admin`, `User`).
 * **Product & Catalog Management:** Comprehensive CRUD operations for products, categories, and inventory.
 * **Order Processing:** Lifecycle management for orders, from cart creation to fulfillment.
 * **Payment Integration:** Seamless payment processing using the **Stripe API**.
-* **Real-time Updates:** Utilizes **WebSockets** ([mention your library, e.g., Socket.io]) for real-time order status updates, inventory changes, and notifications.
+* **Real-time Updates:** Utilizes **WebSockets** (SignalR) for real-time order status updates, inventory changes, and notifications.
 * **Performance & Caching:** Implements **Redis** for efficient data caching to improve response times and reduce database load on high-traffic endpoints.
 * **Following System:** A social commerce feature allowing users/customers to **follow** their favorite sellers or brands.
-* **Search & Filtering:** Advanced search capabilities powered by [mention your tech, e.g., database indexing, Elasticsearch, etc.].
+* **Search & Filtering:** Advanced search capabilities.
 
 ---
 
@@ -91,46 +91,6 @@ Welcome to the documentation for the **[Your Project Name]** E-commerce API. Thi
 
 ---
 
-### **🔑 Authentication and Roles (RBAC)**
 
-All protected endpoints require a **Bearer Token** (JWT) in the `Authorization` header.
 
-| Role | Permissions | Key Endpoints |
-| :--- | :--- | :--- |
-| **`Admin`** | Full access to all resources. | `/api/v1/admin/*`, `/api/v1/products/create` |
-| **`Seller`** | Manage their own products and inventory. | `/api/v1/products/my`, `/api/v1/orders/seller` |
-| **`Customer`** | Place orders, view products, manage profile, follow sellers. | `/api/v1/cart`, `/api/v1/orders/place`, `/api/v1/follow` |
 
-**Example Protected Request:**
-### **💳 Payment Integration (Stripe)**
-
-The API uses **Stripe Checkout** for payment sessions.
-
-| Endpoint | Description | Requires Auth |
-| :--- | :--- | :--- |
-| `POST /api/v1/payment/checkout` | Creates a new Stripe Checkout session based on the user's cart. | **Customer** |
-| `POST /api/v1/payment/webhook` | Receives payment success/failure events from Stripe (Webhook). | **None** |
-
-> **Note:** The `/webhook` endpoint must be exposed to Stripe and should be protected by checking the `STRIPE_WEBHOOK_SECRET` signature.
-
----
-
-### **⚡ Real-time Features (WebSockets)**
-
-WebSockets are used to push immediate updates to the client.
-
-| Event Name | Description | Triggered When | Target Users |
-| :--- | :--- | :--- | :--- |
-| `orderStatusUpdate` | Notifies users when their order status changes. | Order is **shipped** or **delivered**. | Specific Customer |
-| `inventoryUpdate` | Notifies followers when a seller updates a key product inventory. | Inventory count falls below a threshold. | Specific Followers |
-
-**Connection Example (Client):**
-
-```javascript
-// Connect to the WebSocket server
-const socket = io('ws://localhost:4000');
-
-// Listen for an order status update
-socket.on('orderStatusUpdate', (data) => {
-  console.log('Order Update:', data.orderId, data.newStatus);
-});
