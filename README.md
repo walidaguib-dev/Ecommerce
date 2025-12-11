@@ -22,10 +22,8 @@ Welcome to the documentation for the **[Your Project Name]** E-commerce API. Thi
 ### **🚀 Getting Started**
 
 #### **Prerequisites**
-
-* [Node.js / Python / etc.] (version **[X.Y.Z]** or higher)
-* **[Database]** (e.g., PostgreSQL, MongoDB)
-* **Redis** server running locally or accessible via a URL.
+* **Docker**
+* **Docker Compose**
 
 #### **Installation**
 
@@ -35,20 +33,12 @@ Welcome to the documentation for the **[Your Project Name]** E-commerce API. Thi
     cd [your-project-directory]
     ```
 
-2.  **Install dependencies:**
-    ```bash
-    # Example for Node.js
-    npm install
-    # or
-    yarn install
-    ```
-
-3.  **Set up Environment Variables:**
+2.  **Set up Environment Variables:**
     Create a file named `.env` in the root directory and populate it with your configuration.
 
     ```bash
     # --- Database Configuration ---
-    DB_HOST=localhost
+    DB_HOST=db_service_name # Use the Docker service name if connecting from the API container
     DB_PORT=5432
     DB_USER=ecommerce_user
     DB_PASS=your_db_password
@@ -65,18 +55,32 @@ Welcome to the documentation for the **[Your Project Name]** E-commerce API. Thi
     STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxx
 
     # --- Caching (Redis) ---
-    REDIS_URL=redis://localhost:6379
-
+    REDIS_URL=redis://redis_service_name:6379 # Use the Redis Docker service name
+    
     # --- Real-time (WebSockets) ---
     WS_PORT=4000
+
+    # --- Docker Port Mapping (Example: Expose API on host port 8080) ---
+    APP_PORT=8080 
     ```
 
-4.  **Run Migrations/Schema Setup:**
+#### **🐳 Running with Docker Compose**
+
+
+1.  **Build and Run the Services:**
     ```bash
-    # [Your command to set up the database schema]
+    docker-compose up --build -d
+    ```
+    *(The `-d` flag runs containers in detached mode)*
+
+2.  **Run Migrations/Schema Setup (Inside the container):**
+    You may need to execute your migration command within the running API container.
+    ```bash
+    docker exec [container_id_or_name] [Your command to run migrations]
+    # Example: docker exec ecommerce-api npm run migrate
     ```
 
-5.  **Start the API Server:**
+3.  **Start the API Server:**
     ```bash
     # Example for Node.js
     npm run dev
@@ -98,3 +102,35 @@ All protected endpoints require a **Bearer Token** (JWT) in the `Authorization` 
 | **`Customer`** | Place orders, view products, manage profile, follow sellers. | `/api/v1/cart`, `/api/v1/orders/place`, `/api/v1/follow` |
 
 **Example Protected Request:**
+### **💳 Payment Integration (Stripe)**
+
+The API uses **Stripe Checkout** for payment sessions.
+
+| Endpoint | Description | Requires Auth |
+| :--- | :--- | :--- |
+| `POST /api/v1/payment/checkout` | Creates a new Stripe Checkout session based on the user's cart. | **Customer** |
+| `POST /api/v1/payment/webhook` | Receives payment success/failure events from Stripe (Webhook). | **None** |
+
+> **Note:** The `/webhook` endpoint must be exposed to Stripe and should be protected by checking the `STRIPE_WEBHOOK_SECRET` signature.
+
+---
+
+### **⚡ Real-time Features (WebSockets)**
+
+WebSockets are used to push immediate updates to the client.
+
+| Event Name | Description | Triggered When | Target Users |
+| :--- | :--- | :--- | :--- |
+| `orderStatusUpdate` | Notifies users when their order status changes. | Order is **shipped** or **delivered**. | Specific Customer |
+| `inventoryUpdate` | Notifies followers when a seller updates a key product inventory. | Inventory count falls below a threshold. | Specific Followers |
+
+**Connection Example (Client):**
+
+```javascript
+// Connect to the WebSocket server
+const socket = io('ws://localhost:4000');
+
+// Listen for an order status update
+socket.on('orderStatusUpdate', (data) => {
+  console.log('Order Update:', data.orderId, data.newStatus);
+});
